@@ -71,9 +71,11 @@ cp .env.example .env
 | Variable | Required | Description | Default / Example |
 | :--- | :--- | :--- | :--- |
 | `DATABASE_URL` | Yes | SQLite database connection string | `file:./dev.db` |
-| `INTEGRATION_MODE` | No | Integration mode (`mock`, `sandbox`, `real`) | `mock` |
-| `ZWAPGRID_API_KEY` | Optional | API key for `https://apione.zwapgrid.com` | `""` |
-| `ZWAPGRID_CONSENT_ID`| Optional | Connected customer ERP consent identifier | `""` |
+| `INTEGRATION_MODE` | No | Open Payments mode (`mock`, `sandbox`, `real`) | `mock` |
+| `ZWAPGRID_MODE` | No | Zwapgrid data classification (`mock`, `test`, `live`) | `mock` |
+| `ZWAPGRID_LIVE_ENABLED` | Required for live | Explicit production-accounting guard (`true`/`false`) | `false` |
+| `ZWAPGRID_API_KEY` | Required for test/live | API key for `https://apione.zwapgrid.com` | `""` |
+| `ZWAPGRID_CONSENT_ID`| Required for test/live | Accepted connected customer ERP consent identifier | `""` |
 | `OPEN_PAYMENT_CLIENT_ID` | Optional | OAuth2 client ID for Open Payments Europe | `""` |
 | `OPEN_PAYMENT_CLIENT_SECRET` | Optional | OAuth2 client secret for Open Payments | `""` |
 | `OPEN_PAYMENT_AUTH_HOST` | Optional | OAuth2 authorization server host | `auth.openbankingplatform.com` |
@@ -83,9 +85,13 @@ cp .env.example .env
 
 ## Integration Modes
 
-- **`MOCK` (Default Demo Mode)**: Runs completely offline using structured Berlin Group NextGenPSD2 and Zwapgrid API.1 test fixtures. Allows testing without external dependencies.
-- **`SANDBOX`**: Connects to `api.sandbox.openbankingplatform.com` using sandbox client credentials.
-- **`LIVE`**: Connects to production Zwapgrid and Open Payments gateways when live credentials and active consent IDs are provided.
+Open Payments keeps its existing `INTEGRATION_MODE` setting. Zwapgrid is configured independently:
+
+- **`ZWAPGRID_MODE=mock`**: Offline local fixtures. No Zwapgrid request is made.
+- **`ZWAPGRID_MODE=test`**: Real Zwapgrid API requests using a consent connected to test or seeded accounting data. The UI labels evidence as `Zwapgrid [TEST DATA]`.
+- **`ZWAPGRID_MODE=live`**: Production accounting data, only when `ZWAPGRID_LIVE_ENABLED=true`. The UI labels evidence as `Zwapgrid [LIVE DATA]`.
+
+A real HTTP request does not automatically mean the accounting data is production data. The consent and connected accounting system determine that classification.
 
 ---
 

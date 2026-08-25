@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { RealOpenPaymentsAdapter } from '@/lib/adapters/real-open-payments-adapter';
-import { RealZwapgridAdapter } from '@/lib/adapters/real-zwapgrid-adapter';
+import { getZwapgridDeploymentMode } from '@/lib/adapters';
 
 export async function GET() {
   const openPayments = new RealOpenPaymentsAdapter();
-  const zwapgridSupplier = new RealZwapgridAdapter('SUPPLIER');
 
   let opConnected = false;
   let opMode = 'MOCK_FALLBACK';
@@ -19,7 +18,18 @@ export async function GET() {
   }
 
   const zgHasKey = Boolean(process.env.ZWAPGRID_API_KEY);
-  const zgHasConsent = Boolean(process.env.ZWAPGRID_CONSENT_ID);
+  const zgHasConsent = Boolean(
+    process.env.ZWAPGRID_CONSENT_ID ||
+    (process.env.ZWAPGRID_SUPPLIER_CONSENT_ID && process.env.ZWAPGRID_BUYER_CONSENT_ID)
+  );
+  let zgMode: 'mock' | 'test' | 'live' | 'invalid' = 'mock';
+  try {
+    zgMode = getZwapgridDeploymentMode();
+  } catch {
+    zgMode = 'invalid';
+  }
+  const zgLiveEnabled = process.env.ZWAPGRID_LIVE_ENABLED === 'true';
+  const zgConfigured = zgMode === 'mock' || (zgHasKey && zgHasConsent && (zgMode !== 'live' || zgLiveEnabled));
 
   return NextResponse.json({
     status: 'HEALTHY',
@@ -34,7 +44,10 @@ export async function GET() {
         futureDatedPayments: true,
       },
       zwapgrid: {
-        status: zgHasKey && zgHasConsent ? 'ACTIVE' : 'MOCK_SANDBOX',
+        status: zgConfigured ? 'CONFIGURED' : 'NOT_CONFIGURED',
+        mode: zgMode,
+        dataClassification: zgMode === 'mock' ? 'LOCAL_FIXTURES' : zgMode === 'test' ? 'TEST_ACCOUNTING_DATA' : 'PRODUCTION_ACCOUNTING_DATA',
+        liveEnabled: zgLiveEnabled,
         apiKeyConfigured: zgHasKey,
         consentConfigured: zgHasConsent,
         salesInvoicesAR: true,
