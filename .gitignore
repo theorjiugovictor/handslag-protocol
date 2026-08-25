@@ -52,3 +52,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# deployment scripts
+/deploy/
+deploy.sh
+docker-entrypoint.sh
+

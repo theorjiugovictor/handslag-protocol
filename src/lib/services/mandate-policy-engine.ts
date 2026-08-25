@@ -9,6 +9,7 @@
  */
 
 import type { Mandate, MandateEvaluation, MandatePolicyCheckResult, MandateUsage } from '@/lib/types/mandate';
+import { checkLienSync } from './lien-registry';
 
 export interface PolicyCheckInput {
   mandate: Mandate;
@@ -171,16 +172,19 @@ export function evaluateMandate(input: PolicyCheckInput): MandateEvaluation {
   if (duplicateCheck.result === 'FAIL') failureReasons.push('Duplicate payment instruction detected');
 
   // 12. Receivable Double-Financing Shield (TransCare fraud typology prevention)
-  const receivableKey = `REC-${input.counterpartyId}-${input.destinationAccount}`;
-  const doubleFinancingDetected = false; // Evaluated against global registry
+  const doubleFinancingDetected = checkLienSync(
+    input.mandate.approvedDestination, // Use destination as invoice proxy in sync context
+    input.counterpartyId
+  );
   const doubleFinancingCheck: MandatePolicyCheckResult = {
     checkName: 'RECEIVABLE_INTEGRITY_SHIELD',
     description: 'Receivable must not be pledged to multiple financiers or settled concurrently',
     result: doubleFinancingDetected ? 'FAIL' : 'PASS',
-    actual: 'VERIFIED_SINGLE_LIEN',
+    actual: doubleFinancingDetected ? 'COMPETING_LIEN_DETECTED' : 'VERIFIED_SINGLE_LIEN',
     limit: 'SINGLE_CREDITOR_LOCK',
   };
   checks.push(doubleFinancingCheck);
+  if (doubleFinancingCheck.result === 'FAIL') failureReasons.push('Receivable double-financing detected — invoice already under active lien by another creditor');
 
   const overallResult = checks.every(c => c.result === 'PASS') ? 'PASS' : 'FAIL';
 

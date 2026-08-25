@@ -18,13 +18,15 @@ import type {
 } from './open-payments-adapter.interface';
 import { MockOpenPaymentsAdapter } from './mock-open-payments-adapter';
 
+// Module-level token cache — survives across class instances and API route invocations
+let sharedTokenCache: { token: string; expiresAt: number } | null = null;
+
 export class RealOpenPaymentsAdapter implements IOpenPaymentsAdapter {
   readonly mode = 'REAL' as const;
   private clientId: string;
   private clientSecret: string;
   private authHost: string;
   private apiHost: string;
-  private cachedToken: { token: string; expiresAt: number } | null = null;
   private fallbackMock: MockOpenPaymentsAdapter;
 
   constructor(opts?: {
@@ -78,8 +80,8 @@ export class RealOpenPaymentsAdapter implements IOpenPaymentsAdapter {
   }
 
   async getAccessToken(scope: string = 'paymentinitiation corporate'): Promise<string> {
-    if (this.cachedToken && this.cachedToken.expiresAt > Date.now() + 60000) {
-      return this.cachedToken.token;
+    if (sharedTokenCache && sharedTokenCache.expiresAt > Date.now() + 60000) {
+      return sharedTokenCache.token;
     }
 
     if (!this.clientId || !this.clientSecret) {
@@ -110,7 +112,7 @@ export class RealOpenPaymentsAdapter implements IOpenPaymentsAdapter {
 
       const data = await res.json();
       if (data.access_token) {
-        this.cachedToken = {
+        sharedTokenCache = {
           token: data.access_token,
           expiresAt: Date.now() + ((data.expires_in || 3600) * 1000),
         };
