@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Settlement Network — Autonomous B2B Settlement Protocol",
-  description: "Autonomous policy-bounded settlement between finance agents using verifiable claims and deterministic mandates.",
+  title: "Handslag — Autonomous B2B Settlement Protocol",
+  description: "Autonomous policy-bounded B2B settlement between finance agents using verifiable claims, deterministic mandates, and instant PSD2 execution.",
 };
 
 export default function RootLayout({

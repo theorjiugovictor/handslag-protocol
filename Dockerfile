@@ -1,26 +1,51 @@
-FROM node:20-alpine
-
+# ─── Stage 1: Dependencies ──────────────────────────────────────
+FROM node:20-slim AS deps
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
-# Copy package files
 COPY package*.json ./
 COPY prisma ./prisma/
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --include=optional
+# ─── Stage 2: Builder ──────────────────────────────────────────
+FROM node:20-slim AS builder
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
 
-# Generate Prisma Client
-RUN npx prisma generate
-
-# Copy application source
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build application
-RUN npx next build
-
-EXPOSE 3000
-
-ENV PORT=3000
+# Generate Prisma Client & Build Next.js standalone
+RUN npx prisma generate
+ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+RUN npm run build
 
-CMD ["node", "./node_modules/next/dist/bin/next", "start", "-p", "3000", "-H", "0.0.0.0"]
+# ─── Stage 3: Production Runner ────────────────────────────────
+FROM node:20-slim AS runner
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0"
+ENV DATABASE_URL="file:/app/data/dev.db"
+
+# Create data directory for SQLite database
+RUN mkdir -p /app/data
+
+# Copy built artifacts from builder
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+COPY deploy/docker-entrypoint.sh ./docker-entrypoint.sh
+
+RUN chmod +x docker-entrypoint.sh
+
+EXPOSE 8080
+
+ENTRYPOINT ["./docker-entrypoint.sh"]

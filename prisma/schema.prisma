@@ -12,13 +12,38 @@ model Organization {
   id          String   @id @default(uuid())
   name        String
   orgNumber   String   @unique
-  role        String   // SUPPLIER or BUYER
+  companyCode String   @unique @default("")  // Simple login code e.g. "NORDIC", "AURORA"
+  role        String   // SUPPLIER, BUYER, or BOTH
   country     String   @default("SE")
+  iban        String   @default("")  // Company IBAN (masked in shared claims)
   createdAt   DateTime @default(now())
   
   agents      AgentIdentity[]
   invoices    Invoice[]
   connections Connection[]
+  sessions    Session[]
+}
+
+model Session {
+  id              String       @id @default(uuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  sessionToken    String       @unique
+  isActive        Boolean      @default(true)
+  connectedAt     DateTime     @default(now())
+  lastSeenAt      DateTime     @default(now())
+}
+
+model ReceivableLien {
+  id              String    @id @default(uuid())
+  invoiceNumber   String
+  creditorOrgId   String
+  creditorOrgName String
+  lienHash        String    @unique  // SHA-512 of invoice + creditor
+  status          String    @default("ACTIVE")  // ACTIVE, RELEASED, EXPIRED
+  registeredAt    DateTime  @default(now())
+  releasedAt      DateTime?
+  negotiationId   String?
 }
 
 model AgentIdentity {
@@ -30,8 +55,6 @@ model AgentIdentity {
   privateKey     String   // Ed25519 private key (hex) - server-side only
   role           String   // SUPPLIER_AGENT or BUYER_AGENT
   createdAt      DateTime @default(now())
-  
-  claims         Claim[]
 }
 
 model Connection {
@@ -65,8 +88,7 @@ model Invoice {
 model Claim {
   id                   String   @id @default(uuid())
   claimType            String
-  issuerAgentId        String
-  issuerAgent          AgentIdentity @relation(fields: [issuerAgentId], references: [id])
+  issuerAgentId        String?
   issuerOrganization   String
   subject              String   // e.g., invoice number
   payload              String   // JSON string

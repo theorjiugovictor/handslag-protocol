@@ -20,6 +20,7 @@ import {
 } from '@/lib/services/demo-scenario-service';
 import { MockZwapgridAdapter } from '@/lib/adapters/mock-zwapgrid-adapter';
 import { MockOpenPaymentsAdapter } from '@/lib/adapters/mock-open-payments-adapter';
+import { TreasuryIntelligenceService } from '@/lib/services/treasury-intelligence';
 import type { Mandate, MandateUsage } from '@/lib/types/mandate';
 
 describe('Settlement Network Test Suite', () => {
@@ -477,6 +478,33 @@ describe('Settlement Network Test Suite', () => {
       const stringifiedClaims = JSON.stringify(state.claims);
       expect(stringifiedClaims).not.toContain('24000');
       expect(stringifiedClaims).not.toContain('24,000');
+    });
+
+    it('proves: Treasury BI calculates safe liquidity capacity and 30-day cash curve', () => {
+      const treasury = TreasuryIntelligenceService.getBuyerTreasuryState(24000, 20000, 10000);
+
+      expect(treasury.consolidatedCashBalance).toBe(24000);
+      expect(treasury.operationalReserve).toBe(20000);
+      expect(treasury.safePaymentCapacityToday).toBe(4000);
+      expect(treasury.accounts).toHaveLength(2);
+      expect(treasury.dailyProjections.length).toBe(31);
+
+      // Check payroll drop at day 25
+      const day25 = treasury.dailyProjections.find((p: any) => p.dayOffset === 25);
+      expect(day25).toBeDefined();
+      expect(day25?.scheduledOutflows).toBe(18000);
+      expect(day25?.projectedBalance).toBeGreaterThan(0); // Safe runway
+    });
+
+    it('proves: PSD2 Data Triangulation enriches raw bank defects with Zwapgrid ERP ledger', () => {
+      const treasury = TreasuryIntelligenceService.getBuyerTreasuryState(24000, 20000, 10000);
+
+      expect(treasury.triangulatedFeed.length).toBeGreaterThan(0);
+      const sample = treasury.triangulatedFeed[0];
+      expect(sample.rawBankEntry.rawCounterpartyName).toBeNull(); // Missing in raw PSD2
+      expect(sample.erpEnrichment.verifiedCounterpartyName).toBe('Nordic Components AB'); // Enriched via Zwapgrid
+      expect(sample.erpEnrichment.reconciliationConfidence).toBeGreaterThan(0.95);
+      expect(treasury.psd2DataQualityReport.triangulatedCompletenessAvg).toBe(100.0);
     });
   });
 });
