@@ -1,0 +1,2872 @@
+{
+	"info": {
+		"_postman_id": "1ce76536-e3f8-4944-b9a8-88db345ae769",
+		"name": "Open Banking Platform",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "ASPSP Information Service",
+			"item": [
+				{
+					"name": "OAuth",
+					"item": [
+						{
+							"name": "client_credentials",
+							"item": [
+								{
+									"name": "Request ASPSP Information token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"pm.environment.set(\"aspspInformationBearerToken\", jsonData.access_token);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{aspspInformationGrantType}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{aspspInformationScope}} {{psuContextScope}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Get Country List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.countries.length > 0) {",
+									"    pm.environment.set(\"isoCountryCodes\", jsonData.countries[0].isoCountryCode);",
+									"    pm.environment.set(\"isoCountryCode\", jsonData.countries[0].isoCountryCode);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"isoCountryCodes\", \"isoCountryCodes_NOT_SET\");",
+									"    pm.environment.set(\"isoCountryCode\", \"isoCountryCode_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/countries",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"countries"
+							],
+							"query": [
+								{
+									"key": "isoCountryCodes",
+									"value": "{{isoCountryCodes}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Country Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/countries/{{isoCountryCode}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"countries",
+								"{{isoCountryCode}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get City List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.cities.length > 0) {",
+									"    pm.environment.set(\"cityIds\", jsonData.cities[0].cityId);",
+									"    pm.environment.set(\"cityId\", jsonData.cities[0].cityId);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"cityIds\", \"cityIds_NOT_SET\");",
+									"    pm.environment.set(\"cityId\", \"cityId_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/cities",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"cities"
+							],
+							"query": [
+								{
+									"key": "isoCountryCodes",
+									"value": "{{isoCountryCodes}}",
+									"disabled": true
+								},
+								{
+									"key": "cityIds",
+									"value": "{{cityIds}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get City Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/cities/{{cityId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"cities",
+								"{{cityId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ASPSP List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.aspsps.length > 0) {",
+									"    pm.environment.set(\"bicFi\", jsonData.aspsps[0].bicFi);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"bicFi\", \"BICFI_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/aspsps",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"aspsps"
+							],
+							"query": [
+								{
+									"key": "isoCountryCodes",
+									"value": "{{isoCountryCodes}}",
+									"disabled": true
+								},
+								{
+									"key": "cityIds",
+									"value": "{{cityIds}}",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ASPSP Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/aspspinformation/v1/aspsps/{{bicFi}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"aspspinformation",
+								"v1",
+								"aspsps",
+								"{{bicFi}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{aspspInformationBearerToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Consent Service",
+			"item": [
+				{
+					"name": "OAuth",
+					"item": [
+						{
+							"name": "authorization_code",
+							"item": [
+								{
+									"name": "Get consent authorisation OAuth start URL",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{authHost}}/connect/authorize?client_id={{clientId}}&scope={{accountInformationScope}} {{psuContextScope}}&response_type={{responseType}}&redirect_uri={{redirectUri}}&state={{state}}&acr_values=idp:{{bicFi}}%20consentId:{{consentId}}%20consentAuthorisationId:{{consentAuthorisationId}}",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}"
+												},
+												{
+													"key": "scope",
+													"value": "{{accountInformationScope}} {{psuContextScope}}"
+												},
+												{
+													"key": "response_type",
+													"value": "{{responseType}}"
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirectUri}}"
+												},
+												{
+													"key": "state",
+													"value": "{{state}}"
+												},
+												{
+													"key": "acr_values",
+													"value": "idp:{{bicFi}}%20consentId:{{consentId}}%20consentAuthorisationId:{{consentAuthorisationId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Activate OAuth consent authorisation",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/x-www-form-urlencoded"
+											},
+											{
+												"key": "X-ConsentId",
+												"value": "{{consentId}}",
+												"type": "text"
+											},
+											{
+												"key": "X-ConsentAuthorisationId",
+												"value": "{{consentAuthorisationId}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "code",
+													"value": "{{accountInformationCode}}",
+													"type": "text"
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirectUri}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{accountInformationScope}} {{psuContextScope}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{accountInformationGrantType}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Used for ASPSPs that uses the Decoupled/OAuth flow."
+						},
+						{
+							"name": "client_credentials",
+							"item": [
+								{
+									"name": "Request Account Informationt token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"pm.environment.set(\"accountBearerToken\", jsonData.access_token);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{accountInformationClientGrantType}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{accountInformationScope}} {{psuContextScope}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Create Consent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"consentId\", jsonData.consentId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"consentValidUntil\", new Date().addDays(4).toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-User-Agent",
+								"value": "{{PSU-User-Agent}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-AffiliatedASPSP-ID",
+								"value": "{{X-AffiliatedASPSP-ID}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r  \"access\": {\r  },\r  \"recurringIndicator\": {{consentRecurringIndicator}},\r  \"validUntil\": \"{{consentValidUntil}}\",\r  \"frequencyPerDay\": {{consentFrequencyPerDay}},\r  \"combinedServiceIndicator\": {{consentCombinedServiceIndicator}}\r}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Consent - With Accounts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"consentId\", jsonData.consentId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"consentValidUntil\", new Date().addDays(4).toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-User-Agent",
+								"value": "{{PSU-User-Agent}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-AffiliatedASPSP-ID",
+								"value": "{{X-AffiliatedASPSP-ID}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r  \"access\": {\r    \"accounts\": [\r      {\r        \"iban\": \"{{consentIban}}\",\r        \"currency\": \"{{consentCurrency}}\"\r      }\r    ],\r    \"balances\": [\r      {\r        \"iban\": \"{{consentIban}}\",\r        \"currency\": \"{{consentCurrency}}\"\r      }\r    ],\r    \"transactions\": [\r      {\r        \"iban\": \"{{consentIban}}\",\r        \"currency\": \"{{consentCurrency}}\"\r      }\r    ]\r  },\r  \"recurringIndicator\": {{consentRecurringIndicator}},\r  \"validUntil\": \"{{consentValidUntil}}\",\r  \"frequencyPerDay\": {{consentFrequencyPerDay}},\r  \"combinedServiceIndicator\": {{consentCombinedServiceIndicator}}\r}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Consent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Consent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"type": "text",
+								"value": "{{bicFi}}"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Consent Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}/status",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Consent Authorisation Process",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"consentAuthorisationId\", jsonData.authorisationId);",
+									"",
+									"if (jsonData.scaMethods.length > 0) {",
+									"    pm.environment.set(\"authenticationMethodId\", jsonData.scaMethods[0].authenticationMethodId);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"authenticationMethodId\", \"authenticationMethodId_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"type": "text",
+								"value": "{{bicFi}}"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}/authorisations",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}",
+								"authorisations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Consent Authorisation Sub-Resources",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"type": "text",
+								"value": "{{bicFi}}"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}/authorisations",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}",
+								"authorisations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Consent Authorisation SCA Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"type": "text",
+								"value": "{{bicFi}}"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}/authorisations/{{consentAuthorisationId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}",
+								"authorisations",
+								"{{consentAuthorisationId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update PSU Data for Consent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (_.has(jsonData, '_links.scaOAuth')) {",
+									"    var myHref = jsonData._links.scaOAuth.href;",
+									"    myHref = myHref.replace(\"[CLIENT_ID]\", pm.environment.get(\"clientId\"));",
+									"    myHref = myHref.replace(\"[TPP_REDIRECT_URI]\", pm.environment.get(\"redirectUri\"));",
+									"    myHref = myHref.replace(\"[TPP_STATE]\", \"myState\");",
+									"    console.log(myHref);",
+									"}",
+									"else if (_.has(jsonData, '_links.scaRedirect')) {",
+									"    var myHref = jsonData._links.scaRedirect.href;",
+									"    myHref = myHref.replace(\"[CLIENT_ID]\", pm.environment.get(\"clientId\"));",
+									"    myHref = myHref.replace(\"[TPP_REDIRECT_URI]\", pm.environment.get(\"redirectUri\"));",
+									"    myHref = myHref.replace(\"[TPP_STATE]\", \"myState\");",
+									"    console.log(myHref);",
+									"}",
+									"else {",
+									"    console.log(\"No Href\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"type": "text",
+								"value": "{{bicFi}}"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r  \t\"authenticationMethodId\": \"{{authenticationMethodId}}\"\r}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/consent/v1/consents/{{consentId}}/authorisations/{{consentAuthorisationId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"consent",
+								"v1",
+								"consents",
+								"{{consentId}}",
+								"authorisations",
+								"{{consentAuthorisationId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accountBearerToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Account Information Service",
+			"item": [
+				{
+					"name": "OAuth",
+					"item": [
+						{
+							"name": "client_credentials",
+							"item": [
+								{
+									"name": "Request Account Informationt token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"pm.environment.set(\"accountBearerToken\", jsonData.access_token);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{accountInformationClientGrantType}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{accountInformationScope}} {{psuContextScope}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Get Account List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.accounts.length > 0) {",
+									"    pm.environment.set(\"accountId\", jsonData.accounts[0].resourceId);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"accountId\", \"ACCOUNT_ID_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/accountinformation/v1/accounts?withBalance={{accountsWithBalance}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"accountinformation",
+								"v1",
+								"accounts"
+							],
+							"query": [
+								{
+									"key": "withBalance",
+									"value": "{{accountsWithBalance}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Account Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/accountinformation/v1/accounts/{{accountId}}?withBalance={{accountDetailsWithBalance}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"accountinformation",
+								"v1",
+								"accounts",
+								"{{accountId}}"
+							],
+							"query": [
+								{
+									"key": "withBalance",
+									"value": "{{accountDetailsWithBalance}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Balances",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/accountinformation/v1/accounts/{{accountId}}/balances",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"accountinformation",
+								"v1",
+								"accounts",
+								"{{accountId}}",
+								"balances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction List",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"dateFrom\", new Date().addDays(-30).toISOString().split('T')[0]);",
+									"pm.environment.set(\"dateTo\", new Date().toISOString().split('T')[0]);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.transactions.booked.length > 0) {",
+									"    pm.environment.set(\"resourceId\", jsonData.transactions.booked[0].transactionId);",
+									"}",
+									"else if (jsonData.transactions.pending.length > 0) {",
+									"    pm.environment.set(\"resourceId\", jsonData.transactions.pending[0].transactionId);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"resourceId\", \"RESOURCE_ID_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/accountinformation/v1/accounts/{{accountId}}/transactions?bookingStatus={{bookingStatus}}&dateFrom={{dateFrom}}&dateTo={{dateTo}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"accountinformation",
+								"v1",
+								"accounts",
+								"{{accountId}}",
+								"transactions"
+							],
+							"query": [
+								{
+									"key": "bookingStatus",
+									"value": "{{bookingStatus}}"
+								},
+								{
+									"key": "dateFrom",
+									"value": "{{dateFrom}}"
+								},
+								{
+									"key": "dateTo",
+									"value": "{{dateTo}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/accountinformation/v1/accounts/{{accountId}}/transactions/{{resourceId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"accountinformation",
+								"v1",
+								"accounts",
+								"{{accountId}}",
+								"transactions",
+								"{{resourceId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{accountBearerToken}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
+			"name": "Payment Initiation Service",
+			"item": [
+				{
+					"name": "OAuth",
+					"item": [
+						{
+							"name": "authorization_code",
+							"item": [
+								{
+									"name": "Get payment authorisation OAuth start URL",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "GET",
+										"header": [],
+										"url": {
+											"raw": "https://{{authHost}}/connect/authorize?client_id={{clientId}}&scope={{paymentInitiationScope}} {{psuContextScope}}&response_type={{responseType}}&redirect_uri={{redirectUri}}&state={{state}}&acr_values=idp:{{bicFi}}%20paymentId:{{paymentId}}%20paymentAuthorisationId:{{paymentAuthorisationId}}",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"authorize"
+											],
+											"query": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}"
+												},
+												{
+													"key": "scope",
+													"value": "{{paymentInitiationScope}} {{psuContextScope}}"
+												},
+												{
+													"key": "response_type",
+													"value": "{{responseType}}"
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirectUri}}"
+												},
+												{
+													"key": "state",
+													"value": "{{state}}"
+												},
+												{
+													"key": "acr_values",
+													"value": "idp:{{bicFi}}%20paymentId:{{paymentId}}%20paymentAuthorisationId:{{paymentAuthorisationId}}"
+												}
+											]
+										}
+									},
+									"response": []
+								},
+								{
+									"name": "Activate OAuth payment authorisation",
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"value": "application/x-www-form-urlencoded"
+											},
+											{
+												"key": "X-PaymentId",
+												"value": "{{paymentId}}",
+												"type": "text"
+											},
+											{
+												"key": "X-PaymentAuthorisationId",
+												"value": "{{paymentAuthorisationId}}",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "code",
+													"value": "{{paymentInitiationCode}}",
+													"type": "text"
+												},
+												{
+													"key": "redirect_uri",
+													"value": "{{redirectUri}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{paymentInitiationScope}} {{psuContextScope}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{paymentInitiationGrantType}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							],
+							"description": "Used for ASPSPs that uses the Decoupled/OAuth flow."
+						},
+						{
+							"name": "client_credentials",
+							"item": [
+								{
+									"name": "Request Payment Initiation token",
+									"event": [
+										{
+											"listen": "test",
+											"script": {
+												"exec": [
+													"var jsonData = JSON.parse(responseBody);",
+													"",
+													"pm.environment.set(\"paymentBearerToken\", jsonData.access_token);"
+												],
+												"type": "text/javascript"
+											}
+										}
+									],
+									"request": {
+										"auth": {
+											"type": "noauth"
+										},
+										"method": "POST",
+										"header": [
+											{
+												"key": "Accept",
+												"value": "application/json",
+												"type": "text"
+											},
+											{
+												"key": "Content-Type",
+												"name": "Content-Type",
+												"value": "application/x-www-form-urlencoded",
+												"type": "text"
+											}
+										],
+										"body": {
+											"mode": "urlencoded",
+											"urlencoded": [
+												{
+													"key": "client_id",
+													"value": "{{clientId}}",
+													"type": "text"
+												},
+												{
+													"key": "client_secret",
+													"value": "{{clientSecret}}",
+													"type": "text"
+												},
+												{
+													"key": "grant_type",
+													"value": "{{paymentInitiationClientGrantType}}",
+													"type": "text"
+												},
+												{
+													"key": "scope",
+													"value": "{{paymentInitiationScope}} {{psuContextScope}}",
+													"type": "text"
+												}
+											]
+										},
+										"url": {
+											"raw": "https://{{authHost}}/connect/token",
+											"protocol": "https",
+											"host": [
+												"{{authHost}}"
+											],
+											"path": [
+												"connect",
+												"token"
+											]
+										}
+									},
+									"response": []
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "Create Payment Initiation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"paymentId\", jsonData.paymentId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"debtorReferenceType\", pm.environment.get(\"bicFi\") === \"NDEASESS\" ? \"bban\" : \"iban\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-User-Agent",
+								"value": "{{PSU-User-Agent}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-AffiliatedASPSP-ID",
+								"value": "{{X-AffiliatedASPSP-ID}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"instructedAmount\":\n  {\n     \"currency\": \"{{paymentCurrency}}\",\n     \"amount\": \"{{paymentAmount}}\"\n  },\n  \"debtorAccount\":\n  {\n     \"{{debtorReferenceType}}\": \"{{debtorIbanOrBban}}\",\n     \"currency\": \"{{debtorAccountCurrency}}\"\n  },\n  \"creditorName\": \"{{paymentCreditorName}}\",\n  \"creditorAccount\":\n  {\n     \"iban\": \"{{creditorIban}}\",\n     \"currency\": \"{{creditorAccountCurrency}}\"\n  },\n  \"remittanceInformationUnstructured\": \"{{remittanceInformationUnstructured}}\"\n}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Payment Initiation - Detailed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"pm.environment.set(\"paymentId\", jsonData.paymentId);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"pm.environment.set(\"debtorReferenceType\", pm.environment.get(\"bicFi\") === \"NDEASESS\" ? \"bban\" : \"iban\");"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-User-Agent",
+								"value": "{{PSU-User-Agent}}",
+								"type": "text"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "X-AffiliatedASPSP-ID",
+								"value": "{{X-AffiliatedASPSP-ID}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"instructedAmount\":\n  {\n     \"currency\": \"{{paymentCurrency}}\",\n     \"amount\": \"{{paymentAmount}}\"\n  },\n  \"debtorAccount\":\n  {\n     \"{{debtorReferenceType}}\": \"{{debtorIbanOrBban}}\",\n     \"currency\": \"{{debtorAccountCurrency}}\"\n  },\n  \"creditorName\": \"{{paymentCreditorName}}\",\n  \"creditorAccount\":\n  {\n     \"iban\": \"{{creditorIban}}\",\n     \"currency\": \"{{creditorAccountCurrency}}\"\n  },\n  \"remittanceInformationUnstructured\": \"{{remittanceInformationUnstructured}}\",\n  \"creditorAgent\": \"{{creditorAgent}}\",\n  \"creditorAddress\": {\n  \t\"street\": \"{{creditorAddressStreet}}\",\n  \t\"buildingNumber\": \"{{creditorAddressBuildingNumber}}\",\n  \t\"city\": \"{{creditorAddressCity}}\",\n  \t\"postalCode\": \"{{creditorAddressPostalCode}}\",\n  \t\"country\": \"{{creditorAddressCountry}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Initiation",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cancel Payment Initiation",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Initiation Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}/status",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Payment Initiation Authorisation Process",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"paymentAuthorisationId\", jsonData.authorisationId);",
+									"",
+									"if (jsonData.scaMethods.length > 0) {",
+									"    pm.environment.set(\"paymentAuthenticationMethodId\", jsonData.scaMethods[0].authenticationMethodId);",
+									"}",
+									"else {",
+									"    pm.environment.set(\"paymentAuthenticationMethodId\", \"paymentAuthenticationMethodId_NOT_SET\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}/authorisations",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}",
+								"authorisations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Initiation Authorisation Sub-Resources",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}/authorisations",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}",
+								"authorisations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Initiation Authorisation SCA Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}/authorisations/{{paymentAuthorisationId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}",
+								"authorisations",
+								"{{paymentAuthorisationId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update PSU Data for Payment Initiation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (_.has(jsonData, '_links.scaOAuth')) {",
+									"    var myHref = jsonData._links.scaOAuth.href;",
+									"    myHref = myHref.replace(\"[CLIENT_ID]\", pm.environment.get(\"clientId\"));",
+									"    myHref = myHref.replace(\"[TPP_REDIRECT_URI]\", pm.environment.get(\"redirectUri\"));",
+									"    myHref = myHref.replace(\"[TPP_STATE]\", \"myState\");",
+									"    console.log(myHref);",
+									"}",
+									"else if (_.has(jsonData, '_links.scaRedirect')) {",
+									"    var myHref = jsonData._links.scaRedirect.href;",
+									"    myHref = myHref.replace(\"[CLIENT_ID]\", pm.environment.get(\"clientId\"));",
+									"    myHref = myHref.replace(\"[TPP_REDIRECT_URI]\", pm.environment.get(\"redirectUri\"));",
+									"    myHref = myHref.replace(\"[TPP_STATE]\", \"myState\");",
+									"    console.log(myHref);",
+									"}",
+									"else {",
+									"    console.log(\"No Href\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Consent-ID",
+								"value": "{{consentId}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "PSU-IP-Address",
+								"value": "{{PSU-IP-Address}}"
+							},
+							{
+								"key": "X-BicFi",
+								"value": "{{bicFi}}",
+								"type": "text"
+							},
+							{
+								"key": "X-Request-ID",
+								"value": "{{$guid}}"
+							},
+							{
+								"key": "PSU-Corporate-Id",
+								"value": "{{PSU-Corporate-Id}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "TPP-Redirect-Preferred",
+								"value": "{{TPP-Redirect-Preferred}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\t\"authenticationMethodId\": \"{{paymentAuthenticationMethodId}}\"\r}"
+						},
+						"url": {
+							"raw": "https://{{apiHost}}/psd2/paymentinitiation/v1/{{payment-service}}/{{payment-product}}/{{paymentId}}/authorisations/{{paymentAuthorisationId}}",
+							"protocol": "https",
+							"host": [
+								"{{apiHost}}"
+							],
+							"path": [
+								"psd2",
+								"paymentinitiation",
+								"v1",
+								"{{payment-service}}",
+								"{{payment-product}}",
+								"{{paymentId}}",
+								"authorisations",
+								"{{paymentAuthorisationId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{paymentBearerToken}}",
+						"type": "string"
+					}
+				]
+			}
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}

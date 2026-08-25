@@ -1,0 +1,211 @@
+// Prisma schema for Settlement Network
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  orgNumber   String   @unique
+  role        String   // SUPPLIER or BUYER
+  country     String   @default("SE")
+  createdAt   DateTime @default(now())
+  
+  agents      AgentIdentity[]
+  invoices    Invoice[]
+  connections Connection[]
+}
+
+model AgentIdentity {
+  id             String   @id @default(uuid())
+  name           String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  publicKey      String   // Ed25519 public key (hex)
+  privateKey     String   // Ed25519 private key (hex) - server-side only
+  role           String   // SUPPLIER_AGENT or BUYER_AGENT
+  createdAt      DateTime @default(now())
+  
+  claims         Claim[]
+}
+
+model Connection {
+  id             String   @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  provider       String   // ZWAPGRID or OPEN_PAYMENTS
+  scope          String   // e.g., "salesinvoices" or "paymentinitiation"
+  consentId      String?  // Zwapgrid consent ID or Open Payments consent ID
+  status         String   @default("MOCK") // ACTIVE, MOCK, EXPIRED
+  createdAt      DateTime @default(now())
+}
+
+model Invoice {
+  id             String   @id @default(uuid())
+  invoiceNumber  String   @unique
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  counterpartyId String
+  amount         Float
+  currency       String   @default("EUR")
+  issueDate      DateTime
+  dueDate        DateTime
+  status         String   @default("UNPAID") // UNPAID, PARTIAL, PAID, DISPUTED
+  perspective    String   // RECEIVABLE (supplier) or PAYABLE (buyer)
+  externalRef    String?  // Zwapgrid record reference
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Claim {
+  id                   String   @id @default(uuid())
+  claimType            String
+  issuerAgentId        String
+  issuerAgent          AgentIdentity @relation(fields: [issuerAgentId], references: [id])
+  issuerOrganization   String
+  subject              String   // e.g., invoice number
+  payload              String   // JSON string
+  sourceSystem         String   // ZWAPGRID, OPEN_PAYMENTS, INTERNAL
+  sourceRecordRef      String?
+  sourceRetrievedAt    DateTime?
+  evidenceHash         String
+  issuedAt             DateTime @default(now())
+  expiresAt            DateTime?
+  correlationId        String
+  signature            String
+  signatureAlgorithm   String   @default("Ed25519")
+  verificationStatus   String   @default("UNVERIFIED") // UNVERIFIED, VERIFIED, FAILED
+  negotiationId        String?
+  negotiation          Negotiation? @relation(fields: [negotiationId], references: [id])
+}
+
+model Negotiation {
+  id             String   @id @default(uuid())
+  invoiceId      String
+  supplierOrgId  String
+  buyerOrgId     String
+  state          String   @default("EVIDENCE_REQUESTED")
+  currentRound   Int      @default(0)
+  maxRounds      Int      @default(5)
+  correlationId  String   @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  completedAt    DateTime?
+  
+  claims         Claim[]
+  proposals      Proposal[]
+  policyEvals    PolicyEvaluation[]
+  payments       PaymentInstruction[]
+  auditEvents    AuditEvent[]
+}
+
+model Proposal {
+  id              String   @id @default(uuid())
+  negotiationId   String
+  negotiation     Negotiation @relation(fields: [negotiationId], references: [id])
+  invoiceId       String
+  proposerOrgId   String
+  proposerRole    String   // SUPPLIER or BUYER
+  installments    String   // JSON array of installments
+  totalAmount     Float
+  currency        String   @default("EUR")
+  expiresAt       DateTime
+  rationaleCode   String   // INITIAL, LIQUIDITY_CONSTRAINED, ACCEPTED, REJECTED
+  supportingClaimIds String // JSON array of claim IDs
+  sequenceNumber  Int
+  status          String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, EXPIRED, SUPERSEDED
+  createdAt       DateTime @default(now())
+}
+
+model Mandate {
+  id                    String   @id @default(uuid())
+  mandateVersion        Int      @default(1)
+  principalOrgId        String
+  principalOrgName      String
+  authorizedAgentId     String
+  sourceAccount         String   // masked IBAN
+  approvedCounterpartyIds String // JSON array
+  approvedDestination   String   // masked IBAN or verified reference
+  allowedCurrencies     String   // JSON array
+  maxAmountPerPayment   Float
+  maxCumulativeAmount   Float
+  maxDailyAmount        Float
+  earliestExecDate      DateTime
+  latestExecDate        DateTime
+  futureDatedAllowed    Boolean  @default(true)
+  effectiveAt           DateTime
+  expiresAt             DateTime
+  revoked               Boolean  @default(false)
+  revokedAt             DateTime?
+  createdBy             String
+  signedAt              DateTime
+  signatureMetadata     String   // JSON - demo signature info
+  createdAt             DateTime @default(now())
+}
+
+model PolicyEvaluation {
+  id              String   @id @default(uuid())
+  negotiationId   String
+  negotiation     Negotiation @relation(fields: [negotiationId], references: [id])
+  mandateId       String
+  paymentAmount   Float
+  currency        String
+  checks          String   // JSON array of individual check results
+  overallResult   String   // PASS or FAIL
+  failureReasons  String?  // JSON array
+  evaluatedAt     DateTime @default(now())
+  correlationId   String
+}
+
+model PaymentInstruction {
+  id              String   @id @default(uuid())
+  negotiationId   String
+  negotiation     Negotiation @relation(fields: [negotiationId], references: [id])
+  idempotencyKey  String   @unique
+  amount          Float
+  currency        String   @default("EUR")
+  debtorAccount   String   // masked
+  creditorAccount String   // masked
+  creditorName    String
+  executionDate   DateTime
+  isFutureDated   Boolean  @default(false)
+  remittanceInfo  String
+  status          String   @default("CREATED") // CREATED, AUTHORIZATION_REQUIRED, SUBMITTED, BOOKED, FAILED, CANCELLED
+  externalPaymentId String?
+  policyEvalId    String?
+  isMocked        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  events          PaymentEvent[]
+}
+
+model PaymentEvent {
+  id                  String   @id @default(uuid())
+  paymentInstructionId String
+  paymentInstruction  PaymentInstruction @relation(fields: [paymentInstructionId], references: [id])
+  eventType           String   // CREATED, SCA_REQUIRED, AUTHORIZED, SUBMITTED, BOOKED, FAILED, CANCELLED
+  details             String?  // JSON
+  timestamp           DateTime @default(now())
+}
+
+model AuditEvent {
+  id              String   @id @default(uuid())
+  negotiationId   String?
+  negotiation     Negotiation? @relation(fields: [negotiationId], references: [id])
+  actor           String   // agent name or system component
+  actorType       String   // SUPPLIER_AGENT, BUYER_AGENT, POLICY_ENGINE, PAYMENT_CONTROLLER, SYSTEM
+  action          String
+  inputClaimRefs  String?  // JSON array of claim IDs
+  policyDecision  String?
+  stateTransition String?  // e.g., "INITIAL_PROPOSAL -> COUNTERPROPOSAL"
+  paymentResult   String?
+  correlationId   String
+  timestamp       DateTime @default(now())
+  details         String?  // JSON
+}
