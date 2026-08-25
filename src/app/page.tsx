@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import { Handshake } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import { SessionProvider, useSession } from '@/components/auth/SessionProvider';
 import LandingPage from '@/components/landing/LandingPage';
 import LoginScreen from '@/components/auth/LoginScreen';
@@ -19,6 +18,13 @@ type AppView =
 function AppContent() {
   const { session, loading } = useSession();
   const [view, setView] = useState<AppView>({ type: 'landing' });
+
+  // If a session becomes active and we are on the login view, automatically move to inbox
+  useEffect(() => {
+    if (session && view.type === 'login') {
+      setView({ type: 'inbox' });
+    }
+  }, [session, view.type]);
 
   if (loading) {
     return (
@@ -52,17 +58,23 @@ function AppContent() {
   }
 
   // 3. Login / Enterprise Selection
-  if (view.type === 'login') {
+  if (view.type === 'login' && !session) {
     return (
       <LoginScreen
         onBackToLanding={() => setView({ type: 'landing' })}
+        onLoginSuccess={() => setView({ type: 'inbox' })}
       />
     );
   }
 
   // 4. Authenticated views guard
   if (!session) {
-    return <LoginScreen onBackToLanding={() => setView({ type: 'landing' })} />;
+    return (
+      <LoginScreen
+        onBackToLanding={() => setView({ type: 'landing' })}
+        onLoginSuccess={() => setView({ type: 'inbox' })}
+      />
+    );
   }
 
   // 5. Active Negotiation View
@@ -75,7 +87,7 @@ function AppContent() {
     );
   }
 
-  // 6. Default: Authenticated Inbox
+  // 6. Default Authenticated View: Negotiation Inbox
   return (
     <NegotiationInbox
       onSelectNegotiation={(id) => setView({ type: 'negotiation', id })}
@@ -84,7 +96,7 @@ function AppContent() {
   );
 }
 
-export default function HandslagApp() {
+export default function Home() {
   return (
     <SessionProvider>
       <AppContent />

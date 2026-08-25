@@ -5,21 +5,21 @@ import {
   ArrowLeft,
   Building2,
   CheckCircle2,
-  XCircle,
   ShieldCheck,
-  Send,
   Lock,
   Activity,
   Clock,
   Eye,
   Network,
-  Download,
   Check,
-  X,
+  Zap,
+  CreditCard,
+  CalendarCheck,
 } from 'lucide-react';
 import { useSession } from '../auth/SessionProvider';
 import { useNegotiation, type NegotiationDetail } from '../realtime/useNegotiation';
 import { useEventSource } from '../realtime/useEventSource';
+import SettlementBasisDrawer from './SettlementBasisDrawer';
 
 interface LiveNegotiationViewProps {
   negotiationId: string;
@@ -31,9 +31,6 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
   const { negotiation, loading, performAction } = useNegotiation(negotiationId);
   const { connected } = useEventSource(true);
   const [activeTab, setActiveTab] = useState<'claims' | 'proposals' | 'audit'>('claims');
-  const [showProposalForm, setShowProposalForm] = useState(false);
-  const [proposalAmount, setProposalAmount] = useState(0);
-  const [proposalScheduledAmount, setProposalScheduledAmount] = useState(0);
   const [actionLoading, setActionLoading] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<NegotiationDetail['claims'][0] | null>(null);
 
@@ -49,27 +46,13 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
   const counterparty = isSupplier ? negotiation.buyerOrg : negotiation.supplierOrg;
   const myOrg = isSupplier ? negotiation.supplierOrg : negotiation.buyerOrg;
   
-  const canMatchPayable = !isSupplier && negotiation.state === 'SUPPLIER_EVIDENCE_PRESENTED';
-  const canPropose = (
-    (isSupplier && negotiation.state === 'OBLIGATION_VERIFIED') ||
-    (!isSupplier && negotiation.state === 'INITIAL_PROPOSAL')
-  );
-  const canAcceptOrReject = (
-    (isSupplier && (negotiation.state === 'COUNTERPROPOSAL')) ||
-    (!isSupplier && (negotiation.state === 'INITIAL_PROPOSAL'))
-  );
-  const isTerminal = ['COMPLETED', 'REJECTED', 'ESCALATED'].includes(negotiation.state);
+  const canOneClickAccept = !isSupplier && negotiation.state === 'INITIAL_PROPOSAL';
 
   const handleAction = async (action: 'MATCH_PAYABLE' | 'PROPOSE' | 'COUNTER' | 'ACCEPT' | 'REJECT', payload?: Record<string, unknown>) => {
     setActionLoading(true);
     await performAction(action, payload);
     setActionLoading(false);
-    setShowProposalForm(false);
   };
-
-  const latestProposal = negotiation.proposals
-    .filter(p => p.status === 'PENDING')
-    .sort((a, b) => b.sequenceNumber - a.sequenceNumber)[0];
 
   return (
     <div className="min-h-screen bg-white text-zinc-950 selection:bg-black selection:text-white font-sans antialiased bg-grid-light">
@@ -88,14 +71,14 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
                 <span className="font-bold text-zinc-950 text-sm font-mono">{negotiation.invoiceId}</span>
                 <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded border ${
                   negotiation.state === 'COMPLETED'
-                    ? 'bg-black text-white border-black'
+                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                     : 'bg-zinc-100 text-zinc-900 border-zinc-300'
                 }`}>
-                  {negotiation.state.replace(/_/g, ' ')}
+                  {negotiation.state === 'COMPLETED' ? 'PAID & SETTLED' : negotiation.state.replace(/_/g, ' ')}
                 </span>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-50 text-zinc-600 border border-zinc-200 inline-flex items-center gap-1.5">
-                  <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-black animate-pulse' : 'bg-zinc-400'}`}></span>
-                  {connected ? 'LIVE' : 'OFFLINE'}
+                  <span className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-emerald-500 animate-pulse' : 'bg-zinc-400'}`}></span>
+                  {connected ? 'LIVE WIRE' : 'OFFLINE'}
                 </span>
               </div>
               <div className="text-[11px] text-zinc-500 font-mono mt-0.5">
@@ -113,55 +96,122 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 pt-8 pb-20">
+      <main className="max-w-6xl mx-auto px-8 pt-8 pb-20 space-y-6">
+        {/* 1-Click Final Handshake Hero Card for Buyer with Emerald Primary Button */}
+        {canOneClickAccept && (
+          <div className="bg-zinc-950 text-white rounded-2xl p-7 shadow-lg border border-black space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] font-mono uppercase tracking-[0.25em] text-emerald-400 font-semibold">
+                    1-CLICK BILATERAL APPROVAL
+                  </span>
+                </div>
+                <h2 className="text-base font-light text-white tracking-tight">
+                  Handslag Terms Prepared by Autonomous Agents
+                </h2>
+                <p className="text-xs text-zinc-400 mt-1 max-w-xl leading-relaxed">
+                  Both agents matched accounts payable and calculated the optimal liquidity split. Confirm below to execute SEPA instant payment and schedule the forward tranche.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => handleAction('ACCEPT')}
+                  disabled={actionLoading}
+                  className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs uppercase tracking-wider transition-all shadow-md flex items-center gap-2 cursor-pointer disabled:opacity-40 ring-2 ring-emerald-400/30 hover:scale-[1.02]"
+                >
+                  <Check className="w-4 h-4 text-white" />
+                  <span>{actionLoading ? 'Executing Payment...' : '🤝 Seal Handslag & Pay €4,000'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Persistent Settlement Basis Drawer */}
+            <SettlementBasisDrawer
+              amount={10000}
+              currency="EUR"
+              invoiceNumber={negotiation.invoiceId}
+              defaultExpanded={true}
+            />
+          </div>
+        )}
+
         {/* Settlement Success Receipt if Completed */}
         {negotiation.state === 'COMPLETED' && (
-          <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-7 mb-8 shadow-2xs">
+          <div className="bg-zinc-50 border border-zinc-200 rounded-2xl p-7 shadow-2xs space-y-6">
             <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center">
-                  <Check className="w-4 h-4" />
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                  <Check className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-zinc-950 uppercase tracking-wider font-mono">
-                    Autonomous Settlement Completed
+                    Payment Executed & Settled
                   </h2>
                   <span className="text-xs text-zinc-500 font-mono">
-                    Bilateral Handslag verified & executed via SEPA Instant
+                    Bilateral Handslag completed via SEPA Instant Bank Rail
                   </span>
                 </div>
               </div>
-              <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-black text-white">
-                SETTLED
-              </span>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-zinc-200 text-xs font-mono">
-              <div>
-                <span className="text-[10px] text-zinc-400 uppercase">Immediate Tranche</span>
-                <span className="text-sm font-bold text-zinc-950 mt-1 block">€4,000.00 EUR</span>
-                <span className="text-[10px] text-zinc-500">SEPA Instant Executed</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-zinc-400 uppercase">Scheduled Tranche</span>
-                <span className="text-sm font-bold text-zinc-950 mt-1 block">€6,000.00 EUR</span>
-                <span className="text-[10px] text-zinc-500">Day 14 Auto-Release</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-zinc-400 uppercase">Policy Firewall</span>
-                <span className="text-sm font-bold text-zinc-950 mt-1 block">12/12 Rules Passed</span>
-                <span className="text-[10px] text-zinc-500">Deterministic Mandate</span>
-              </div>
-              <div>
-                <span className="text-[10px] text-zinc-400 uppercase">Double-Financing Lien</span>
-                <span className="text-sm font-bold text-zinc-950 mt-1 block">Released & Logged</span>
-                <span className="text-[10px] text-zinc-500">TransCare Shield</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold px-3 py-1 rounded bg-emerald-600 text-white shadow-xs">
+                  ● PAID & SETTLED
+                </span>
               </div>
             </div>
+
+            {/* High-Signal Payment Status Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 pt-4 border-t border-zinc-200 text-xs font-mono">
+              <div className="p-3.5 bg-white rounded-xl border border-emerald-200 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-[10px] text-emerald-700 font-bold uppercase">
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>SEPA Instant Executed</span>
+                </div>
+                <span className="text-base font-bold text-zinc-950 mt-1 block">€4,000.00 EUR</span>
+                <span className="text-[10px] text-emerald-600 block mt-0.5 font-medium">Ref: SEPA-INST-884920</span>
+              </div>
+
+              <div className="p-3.5 bg-white rounded-xl border border-zinc-200 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold uppercase">
+                  <CalendarCheck className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Scheduled Tranche</span>
+                </div>
+                <span className="text-base font-bold text-zinc-950 mt-1 block">€6,000.00 EUR</span>
+                <span className="text-[10px] text-zinc-500 block mt-0.5">Day 14 Bank Scheduled</span>
+              </div>
+
+              <div className="p-3.5 bg-white rounded-xl border border-zinc-200 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold uppercase">
+                  <ShieldCheck className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>Open Payments VoP</span>
+                </div>
+                <span className="text-base font-bold text-zinc-950 mt-1 block">IBAN Match 100%</span>
+                <span className="text-[10px] text-zinc-500 block mt-0.5">Beneficiary Verified</span>
+              </div>
+
+              <div className="p-3.5 bg-white rounded-xl border border-zinc-200 shadow-2xs">
+                <div className="flex items-center gap-1.5 text-[10px] text-zinc-600 font-bold uppercase">
+                  <Lock className="w-3.5 h-3.5 text-zinc-500" />
+                  <span>TransCare Shield</span>
+                </div>
+                <span className="text-base font-bold text-zinc-950 mt-1 block">Lien Released</span>
+                <span className="text-[10px] text-zinc-500 block mt-0.5">SHA-512 Logged</span>
+              </div>
+            </div>
+
+            {/* Persistent Settlement Basis Drawer */}
+            <SettlementBasisDrawer
+              amount={10000}
+              currency="EUR"
+              invoiceNumber={negotiation.invoiceId}
+              defaultExpanded={false}
+            />
           </div>
         )}
 
         {/* Party Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-11 gap-4 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-11 gap-4">
           <div className={`lg:col-span-5 bg-white rounded-xl border p-5 ${
             isSupplier ? 'border-black shadow-2xs' : 'border-zinc-200'
           }`}>
@@ -197,65 +247,8 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
           </div>
         </div>
 
-        {/* Action Bar (shown only if manual action required) */}
-        {!isTerminal && (canMatchPayable || canPropose || canAcceptOrReject) && (
-          <div className="bg-zinc-50 rounded-xl border border-zinc-200 p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              <Activity className="w-4 h-4 text-zinc-600" />
-              <span className="text-xs font-mono text-zinc-800">
-                {canMatchPayable && 'MANUAL ACTION: Match payable against your AP ledger'}
-                {canPropose && (isSupplier ? 'ACTION: Propose terms' : 'ACTION: Review proposal or submit counteroffer')}
-                {canAcceptOrReject && 'ACTION: Accept or counter latest proposal'}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {canMatchPayable && (
-                <button
-                  onClick={() => handleAction('MATCH_PAYABLE')}
-                  disabled={actionLoading}
-                  className="px-4 py-2 bg-black text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                  Confirm Match
-                </button>
-              )}
-
-              {canPropose && (
-                <button
-                  onClick={() => setShowProposalForm(true)}
-                  className="px-4 py-2 bg-black text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 transition-colors cursor-pointer flex items-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  {isSupplier ? 'Propose Terms' : 'Counter Proposal'}
-                </button>
-              )}
-
-              {canAcceptOrReject && latestProposal && (
-                <>
-                  <button
-                    onClick={() => handleAction('ACCEPT')}
-                    disabled={actionLoading}
-                    className="px-4 py-2 bg-black text-white rounded-lg text-xs font-semibold hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Check className="w-3.5 h-3.5" />
-                    Accept Deal
-                  </button>
-                  <button
-                    onClick={() => setShowProposalForm(true)}
-                    className="px-4 py-2 bg-white text-zinc-800 border border-zinc-300 rounded-lg text-xs font-semibold hover:bg-zinc-50 transition-colors cursor-pointer flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    Counter
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )}
-
         {/* Tabs */}
-        <div className="flex items-center gap-4 border-b border-zinc-200 mb-6">
+        <div className="flex items-center gap-4 border-b border-zinc-200">
           {(['claims', 'proposals', 'audit'] as const).map(tab => (
             <button
               key={tab}
@@ -291,8 +284,8 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-xs font-bold text-zinc-950">{claim.issuerOrganization}</span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 border border-zinc-200">{claim.claimType}</span>
-                        <span className="text-[10px] font-mono text-zinc-600 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded">
-                          {claim.verificationStatus}
+                        <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-medium">
+                          ✓ {claim.verificationStatus}
                         </span>
                       </div>
                       <div className="text-[11px] text-zinc-500 font-mono">
@@ -323,8 +316,12 @@ export default function LiveNegotiationView({ negotiationId, onBack }: LiveNegot
                     <span className="text-xs font-bold text-zinc-950 font-mono">
                       Round #{proposal.sequenceNumber}
                     </span>
-                    <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-black text-white">
-                      {proposal.status}
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                      proposal.status === 'ACCEPTED'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-black text-white'
+                    }`}>
+                      {proposal.status === 'ACCEPTED' ? '✓ SETTLED & PAID' : proposal.status}
                     </span>
                   </div>
                   <span className="text-[11px] text-zinc-400 font-mono">

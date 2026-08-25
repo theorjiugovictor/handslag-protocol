@@ -11,19 +11,21 @@ import {
   LogOut,
   Database,
   CheckCircle2,
+  Check,
   Zap,
 } from 'lucide-react';
 import { useSession } from '../auth/SessionProvider';
 import { useNegotiationList, type NegotiationSummary } from '../realtime/useNegotiation';
 import { useEventSource } from '../realtime/useEventSource';
 import { TreasuryIntelligenceService } from '@/lib/services/treasury-intelligence';
+import SettlementBasisDrawer from './SettlementBasisDrawer';
 
 const STATE_COLORS: Record<string, { bg: string; text: string; label: string }> = {
   EVIDENCE_REQUESTED: { bg: 'bg-zinc-100 border-zinc-200', text: 'text-zinc-700', label: 'EVIDENCE REQUESTED' },
   SUPPLIER_EVIDENCE_PRESENTED: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-800', label: 'EVIDENCE PRESENTED' },
   BUYER_MATCH_PENDING: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-800', label: 'AWAITING MATCH' },
   OBLIGATION_VERIFIED: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-900', label: 'OBLIGATION VERIFIED' },
-  INITIAL_PROPOSAL: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-800', label: 'PROPOSAL PENDING' },
+  INITIAL_PROPOSAL: { bg: 'bg-zinc-950 text-white border-black', text: 'text-white font-semibold', label: '1-CLICK HANDSHAKE PENDING' },
   COUNTERPROPOSAL: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-800', label: 'COUNTERPROPOSAL' },
   AGREEMENT_REACHED: { bg: 'bg-zinc-950 text-white border-black', text: 'text-white font-semibold', label: 'AGREEMENT REACHED' },
   POLICY_VALIDATION: { bg: 'bg-zinc-100 border-zinc-300', text: 'text-zinc-800', label: 'POLICY VALIDATION' },
@@ -85,12 +87,8 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
     }
   };
 
-  const needsMyAction = (n: NegotiationSummary) => {
-    if (n.state === 'COMPLETED' || n.state === 'REJECTED') return false;
-    if (n.myRole === 'BUYER' && n.state === 'SUPPLIER_EVIDENCE_PRESENTED') return true;
-    if (n.myRole === 'BUYER' && n.state === 'INITIAL_PROPOSAL') return true;
-    if (n.myRole === 'SUPPLIER' && n.state === 'COUNTERPROPOSAL') return true;
-    return false;
+  const isAwaitingMyHandshake = (n: NegotiationSummary) => {
+    return n.myRole === 'BUYER' && n.state === 'INITIAL_PROPOSAL';
   };
 
   return (
@@ -151,10 +149,10 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
                 </span>
               </div>
               <h2 className="text-base font-medium text-zinc-950 tracking-tight">
-                Liquidity Reconciliation & Autonomous Settlements
+                Liquidity Reconciliation & Autonomous Handslag
               </h2>
               <p className="text-xs text-zinc-600 mt-1.5 max-w-2xl leading-relaxed">
-                Ingests receivables from Zwapgrid ERP and reconciles multi-bank PSD2 cashflow runways. When you auto-initiate, both autonomous agents negotiate and complete settlement instantly.
+                Ingests ERP ledgers and verifies multi-bank PSD2 cashflow runways. Autonomous agents negotiate mathematically optimal tranches, awaiting only a final 1-click confirmation.
               </p>
             </div>
 
@@ -209,7 +207,7 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
             {detectedOpportunities.map((opp) => (
               <div
                 key={opp.id}
-                className="bg-white rounded-xl border border-zinc-200 p-6 hover:border-zinc-400 transition-all shadow-2xs"
+                className="bg-white rounded-xl border border-zinc-200 p-6 hover:border-zinc-400 transition-all shadow-2xs space-y-4"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
                   <div className="space-y-2">
@@ -228,10 +226,6 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
                     <div className="text-xs text-zinc-700">
                       Counterparty: <strong className="text-zinc-950 font-semibold">{opp.counterpartyName}</strong> ({opp.counterpartyCode}) • Amount: <strong className="text-zinc-950 font-mono">€{opp.amount.toLocaleString()} {opp.currency}</strong>
                     </div>
-
-                    <p className="text-xs text-zinc-500 max-w-2xl leading-relaxed">
-                      <span className="text-zinc-800 font-semibold font-mono text-[11px]">RATIONALE:</span> {opp.aiRationale}
-                    </p>
                   </div>
 
                   <button
@@ -242,6 +236,14 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
                     <span>{autoInitiatingId === opp.id ? 'Auto-Executing...' : '⚡ Auto-Initiate Handslag'}</span>
                   </button>
                 </div>
+
+                {/* Persistent Settlement Basis Drawer */}
+                <SettlementBasisDrawer
+                  amount={opp.amount}
+                  currency={opp.currency}
+                  invoiceNumber={opp.invoiceNumber}
+                  sourceSystem={opp.sourceSystem}
+                />
               </div>
             ))}
           </div>
@@ -338,15 +340,15 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
               <div className="space-y-3">
                 {negotiations.map((n) => {
                   const stateInfo = STATE_COLORS[n.state] ?? STATE_COLORS.EVIDENCE_REQUESTED;
-                  const actionNeeded = needsMyAction(n);
+                  const awaitingHandshake = isAwaitingMyHandshake(n);
                   
                   return (
                     <button
                       key={n.id}
                       onClick={() => onSelectNegotiation(n.id)}
                       className={`w-full bg-white rounded-xl border p-5 text-left transition-all cursor-pointer hover:border-zinc-400 hover:shadow-sm group ${
-                        actionNeeded
-                          ? 'border-zinc-900 ring-1 ring-zinc-200'
+                        awaitingHandshake
+                          ? 'border-black ring-2 ring-zinc-900/10'
                           : 'border-zinc-200'
                       }`}
                     >
@@ -364,9 +366,14 @@ export default function NegotiationInbox({ onSelectNegotiation, onStartSoloDemo 
                               <span className={`text-[9px] font-mono font-semibold px-2 py-0.5 rounded border ${stateInfo.bg} ${stateInfo.text}`}>
                                 {stateInfo.label}
                               </span>
+                              {awaitingHandshake && (
+                                <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-black text-white flex items-center gap-1">
+                                  1-CLICK APPROVAL READY
+                                </span>
+                              )}
                               {n.state === 'COMPLETED' && (
                                 <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-zinc-100 text-zinc-900 border border-zinc-300 flex items-center gap-1">
-                                  <CheckCircle2 className="w-2.5 h-2.5 text-zinc-900" />
+                                  <Check className="w-2.5 h-2.5 text-zinc-900" />
                                   SETTLED
                                 </span>
                               )}

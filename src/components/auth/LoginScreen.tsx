@@ -12,9 +12,10 @@ const DEMO_COMPANIES = [
 
 interface LoginScreenProps {
   onBackToLanding?: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginScreen({ onBackToLanding }: LoginScreenProps) {
+export default function LoginScreen({ onBackToLanding, onLoginSuccess }: LoginScreenProps) {
   const { login } = useSession();
   const [selectedCode, setSelectedCode] = useState<string | null>(null);
   const [customCode, setCustomCode] = useState('');
@@ -25,7 +26,11 @@ export default function LoginScreen({ onBackToLanding }: LoginScreenProps) {
     setLoading(true);
     setError(null);
     const success = await login(code);
-    if (!success) {
+    if (success) {
+      if (onLoginSuccess) {
+        onLoginSuccess();
+      }
+    } else {
       setError(`Login failed for company code: ${code}`);
     }
     setLoading(false);

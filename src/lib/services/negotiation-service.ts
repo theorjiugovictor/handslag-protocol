@@ -4,7 +4,7 @@
  * DB-backed negotiation lifecycle manager and FSM orchestrator.
  * Encapsulates state transitions, DB persistence via Prisma,
  * claim verification, multi-party event broadcasting, and
- * autonomous bilateral agent execution loops.
+ * autonomous bilateral agent execution loops with single-click handshake approval.
  */
 
 import prisma from '@/lib/db';
@@ -36,6 +36,7 @@ export class NegotiationService {
     buyerOrgName: string;
     dueDate?: string;
     autoExecute?: boolean;
+    requireFinalApproval?: boolean;
   }) {
     const correlationId = uuidv4();
 
@@ -148,9 +149,9 @@ export class NegotiationService {
       }
     );
 
-    // If autoExecute is requested, run the end-to-end autonomous negotiation sequence
-    if (params.autoExecute) {
-      return await this.runAutonomousSequence({
+    // If autoExecute or preparation is requested
+    if (params.autoExecute || params.requireFinalApproval !== false) {
+      return await this.prepareAutonomousHandslag({
         negotiationId: negotiation.id,
         supplierOrgId: params.supplierOrgId,
         supplierOrgName: params.supplierOrgName,
@@ -160,6 +161,7 @@ export class NegotiationService {
         amount: params.amount,
         currency: params.currency,
         correlationId,
+        autoComplete: params.autoExecute === true && params.requireFinalApproval === false,
       });
     }
 
@@ -167,9 +169,10 @@ export class NegotiationService {
   }
 
   /**
-   * Executes the autonomous multi-turn bilateral settlement sequence without manual steps.
+   * Automatically prepares the bilateral handslag (ledger verification + optimal proposal)
+   * and leaves it at INITIAL_PROPOSAL for 1-click buyer confirmation (or auto-completes).
    */
-  static async runAutonomousSequence(params: {
+  static async prepareAutonomousHandslag(params: {
     negotiationId: string;
     supplierOrgId: string;
     supplierOrgName: string;
@@ -179,13 +182,14 @@ export class NegotiationService {
     amount: number;
     currency: string;
     correlationId: string;
+    autoComplete?: boolean;
   }) {
     const parties = [params.supplierOrgId, params.buyerOrgId];
 
     // Transition SUPPLIER_EVIDENCE_PRESENTED -> BUYER_MATCH_PENDING
     await this.transitionState(params.negotiationId, 'BUYER_MATCH_PENDING', params.buyerOrgName, 'BUYER_AGENT');
 
-    // 1. Buyer Agent auto-verifies AP ledger match
+    // 1. Buyer Agent auto-verifies AP ledger match in the background
     const buyerAgent = generateAgentKeyPair(`agent-${params.buyerOrgId}`, 'Buyer CFO Agent', params.buyerOrgId, params.buyerOrgName);
     const buyerClaim = createSignedClaim(
       'PAYABLE_MATCHED',
@@ -256,7 +260,7 @@ export class NegotiationService {
         totalAmount: params.amount,
         currency: params.currency,
         installments: JSON.stringify(installments),
-        status: 'ACCEPTED', // Autonomous mutual agreement
+        status: params.autoComplete ? 'ACCEPTED' : 'PENDING',
         rationaleCode: 'INITIAL',
         supportingClaimIds: '[]',
         expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -264,31 +268,66 @@ export class NegotiationService {
       },
     });
 
-    // Advance OBLIGATION_VERIFIED -> INITIAL_PROPOSAL -> AGREEMENT_REACHED
-    await this.transitionState(params.negotiationId, 'INITIAL_PROPOSAL', params.supplierOrgName, 'SUPPLIER_AGENT');
-    await this.transitionState(params.negotiationId, 'AGREEMENT_REACHED', params.buyerOrgName, 'BUYER_AGENT', { proposalId: proposal.id });
+    // Advance OBLIGATION_VERIFIED -> INITIAL_PROPOSAL
+    const proposalState = await this.transitionState(params.negotiationId, 'INITIAL_PROPOSAL', params.supplierOrgName, 'SUPPLIER_AGENT');
 
-    broadcastToNegotiation(params.negotiationId, parties, 'proposal:received', params.buyerOrgId, {
+    broadcastToNegotiation(params.negotiationId, parties, 'proposal:received', params.supplierOrgId, {
       negotiationId: params.negotiationId,
       proposalId: proposal.id,
-      state: 'AGREEMENT_REACHED',
+      state: 'INITIAL_PROPOSAL',
+      installments,
     });
 
-    // 3. Deterministic Mandate Policy Validation
+    if (params.autoComplete) {
+      return await this.executeSettlement({
+        negotiationId: params.negotiationId,
+        proposalId: proposal.id,
+        buyerOrgName: params.buyerOrgName,
+        buyerOrgId: params.buyerOrgId,
+        supplierOrgId: params.supplierOrgId,
+        amount: params.amount,
+        upfrontAmount: upfront,
+        deferredAmount: deferred,
+        currency: params.currency,
+      });
+    }
+
+    return proposalState;
+  }
+
+  /**
+   * Executes the 1-click settlement once accepted.
+   */
+  static async executeSettlement(params: {
+    negotiationId: string;
+    proposalId: string;
+    buyerOrgName: string;
+    buyerOrgId: string;
+    supplierOrgId: string;
+    amount: number;
+    upfrontAmount: number;
+    deferredAmount: number;
+    currency: string;
+  }) {
+    const parties = [params.supplierOrgId, params.buyerOrgId];
+
+    await prisma.proposal.update({
+      where: { id: params.proposalId },
+      data: { status: 'ACCEPTED' },
+    });
+
+    await this.transitionState(params.negotiationId, 'AGREEMENT_REACHED', params.buyerOrgName, 'BUYER_AGENT', { proposalId: params.proposalId });
     await this.transitionState(params.negotiationId, 'POLICY_VALIDATION', 'Mandate Policy Firewall', 'POLICY_ENGINE');
-    
-    // 4. SEPA Instant Payment Execution
     await this.transitionState(params.negotiationId, 'PAYMENT_INITIATED', 'SEPA Instant Rail', 'PAYMENT_CONTROLLER');
-    
-    if (deferred > 0) {
+
+    if (params.deferredAmount > 0) {
       await this.transitionState(params.negotiationId, 'PAYMENT_SCHEDULED', 'Cashflow Controller', 'PAYMENT_CONTROLLER');
     }
 
-    // 5. Complete Handslag
     const completed = await this.transitionState(params.negotiationId, 'COMPLETED', 'Handslag Protocol Engine', 'SYSTEM', {
       executedSettlement: {
-        upfrontAmount: upfront,
-        deferredAmount: deferred,
+        upfrontAmount: params.upfrontAmount,
+        deferredAmount: params.deferredAmount,
         currency: params.currency,
         settlementRef: `SEPA-INST-${Date.now()}`,
       },
@@ -299,8 +338,8 @@ export class NegotiationService {
       state: 'COMPLETED',
       settlementSummary: {
         totalSettled: params.amount,
-        upfrontTranche: upfront,
-        deferredTranche: deferred,
+        upfrontTranche: params.upfrontAmount,
+        deferredTranche: params.deferredAmount,
         currency: params.currency,
       },
     });
