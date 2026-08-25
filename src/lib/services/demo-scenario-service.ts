@@ -15,10 +15,9 @@ import { createSignedClaim, generateAgentKeyPair, verifyClaim, type AgentKeyPair
 import { evaluateMandate, clearExecutedPayments } from './mandate-policy-engine';
 import { executePayment, clearPaymentData, type PaymentInstruction } from './payment-controller';
 import { recordAuditEvent, clearAuditLog, getAuditLog, type AuditEntry } from './audit-service';
-import { MockZwapgridAdapter } from '@/lib/adapters/mock-zwapgrid-adapter';
+import { createZwapgridAdapter } from '@/lib/adapters';
 import { MockOpenPaymentsAdapter } from '@/lib/adapters/mock-open-payments-adapter';
 import { RealOpenPaymentsAdapter } from '@/lib/adapters/real-open-payments-adapter';
-import { RealZwapgridAdapter } from '@/lib/adapters/real-zwapgrid-adapter';
 import {
   type ScenarioConfig,
   DEFAULT_SCENARIO_CONFIG,
@@ -265,10 +264,49 @@ async function executeStep(demo: DemoState): Promise<DemoState> {
 
 // ─── Individual Steps ──────────────────────────────────────────
 
+function zwapgridEvidenceLabel(mode: 'MOCK' | 'TEST' | 'LIVE'): string {
+  if (mode === 'MOCK') return 'Zwapgrid [MOCK]';
+  if (mode === 'TEST') return 'Zwapgrid [TEST DATA]';
+  return 'Zwapgrid [LIVE DATA]';
+}
+
+function configuredZwapgridInvoiceReference(
+  demo: DemoState,
+  role: 'SUPPLIER' | 'BUYER'
+): string {
+  const configuredReference = role === 'SUPPLIER'
+    ? process.env.ZWAPGRID_SUPPLIER_INVOICE_REFERENCE
+    : process.env.ZWAPGRID_BUYER_INVOICE_REFERENCE;
+  const defaultReference = DEFAULT_SCENARIO_CONFIG.invoiceNumber;
+  const mode = (process.env.ZWAPGRID_MODE || 'mock').toLowerCase();
+
+  if (configuredReference) return configuredReference;
+  if (demo.config.invoiceNumber && (mode === 'mock' || demo.config.invoiceNumber !== defaultReference)) {
+    return demo.config.invoiceNumber;
+  }
+  if (mode !== 'mock') {
+    throw new Error(
+      `Zwapgrid ${role.toLowerCase()} invoice reference is not configured. ` +
+      `Set ${role === 'SUPPLIER' ? 'ZWAPGRID_SUPPLIER_INVOICE_REFERENCE' : 'ZWAPGRID_BUYER_INVOICE_REFERENCE'} ` +
+      `to a reference from the connected accounting ledger.`
+    );
+  }
+  return defaultReference || 'INV-2026-1042';
+}
+
 async function stepSupplierClaim(demo: DemoState): Promise<DemoState> {
-  const supplierZwapgrid = new MockZwapgridAdapter('SUPPLIER');
-  const invoice = await supplierZwapgrid.getSupplierInvoice('INV-2026-1042');
+  const supplierZwapgrid = createZwapgridAdapter('SUPPLIER');
+  const supplierInvoiceNumber = configuredZwapgridInvoiceReference(demo, 'SUPPLIER');
+  const invoice = await supplierZwapgrid.getSupplierInvoice(
+    supplierInvoiceNumber,
+    { correlationId: demo.correlationId }
+  );
   if (!invoice) throw new Error('Invoice not found');
+
+  // Synchronize configuration with retrieved ledger invoice
+  demo.config.invoiceAmount = invoice.amount;
+  demo.config.invoiceNumber = invoice.invoiceNumber;
+  demo.config.currency = invoice.currency;
 
   const claim = createSignedClaim(
     'INVOICE_RECORDED',
@@ -299,17 +337,18 @@ async function stepSupplierClaim(demo: DemoState): Promise<DemoState> {
   const prevState = demo.state;
   demo.state = 'SUPPLIER_EVIDENCE_PRESENTED';
 
+  const daysOverdue = Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24));
   addTimelineEvent(demo, {
     actor: 'SUPPLIER_AGENT',
     actorName: 'Nordic Components AB',
     claimType: 'INVOICE_RECORDED',
-    summary: `Supplier claims invoice INV-2026-1042 (€10,000) is ${Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24))} days overdue. This is a signed claim based on supplier's accounts receivable ledger.`,
-    evidenceSource: 'Zwapgrid [MOCK]',
+    summary: `Supplier claims invoice ${invoice.invoiceNumber} (€${invoice.amount.toLocaleString()}) is ${daysOverdue} days overdue. This is a signed claim based on supplier's accounts receivable ledger.`,
+    evidenceSource: zwapgridEvidenceLabel(supplierZwapgrid.mode),
     signatureVerified: true,
     supportingClaimIds: [],
     stateTransition: { from: prevState, to: demo.state },
     details: { payload: claim.payload, claimId: claim.claimId },
-    isMocked: true,
+    isMocked: supplierZwapgrid.mode === 'MOCK',
   });
 
   recordAuditEvent({
@@ -327,8 +366,12 @@ async function stepSupplierClaim(demo: DemoState): Promise<DemoState> {
 }
 
 async function stepBuyerMatch(demo: DemoState): Promise<DemoState> {
-  const buyerZwapgrid = new MockZwapgridAdapter('BUYER');
-  const payable = await buyerZwapgrid.getBuyerPayable('INV-2026-1042');
+  const buyerZwapgrid = createZwapgridAdapter('BUYER');
+  const buyerInvoiceNumber = configuredZwapgridInvoiceReference(demo, 'BUYER');
+  const payable = await buyerZwapgrid.getBuyerPayable(
+    buyerInvoiceNumber,
+    { correlationId: demo.correlationId }
+  );
   if (!payable) throw new Error('Payable not found');
 
   // Verify the supplier's claim first
@@ -336,6 +379,23 @@ async function stepBuyerMatch(demo: DemoState): Promise<DemoState> {
   if (!supplierClaim) throw new Error('No supplier claim to verify');
   const isValid = verifyClaim(supplierClaim, demo.supplierAgent.publicKey);
   if (!isValid) throw new Error('Supplier claim signature verification failed');
+
+  const supplierPayload = supplierClaim.payload as {
+    amount: number;
+    currency: string;
+    dueDate: string;
+  };
+  if (
+    supplierPayload.amount !== payable.amount ||
+    supplierPayload.currency !== payable.currency ||
+    supplierPayload.dueDate !== payable.dueDate
+  ) {
+    throw new Error(
+      `Zwapgrid AR/AP mismatch for settlement: amount, currency, and due date must agree ` +
+      `(AR ${supplierPayload.amount} ${supplierPayload.currency} due ${supplierPayload.dueDate}; ` +
+      `AP ${payable.amount} ${payable.currency} due ${payable.dueDate})`
+    );
+  }
 
   const claim = createSignedClaim(
     'PAYABLE_MATCHED',
@@ -370,13 +430,13 @@ async function stepBuyerMatch(demo: DemoState): Promise<DemoState> {
     actor: 'BUYER_AGENT',
     actorName: 'Aurora Retail AB',
     claimType: 'PAYABLE_MATCHED',
-    summary: `Buyer independently confirms matching payable in its accounts-payable data. Full match: invoice INV-2026-1042, €${payable.amount.toLocaleString()}, ${payable.currency}. No dispute flag.`,
-    evidenceSource: 'Zwapgrid [MOCK]',
+    summary: `Buyer independently confirms matching payable in its accounts-payable data. Full match: invoice ${payable.invoiceNumber}, €${payable.amount.toLocaleString()}, ${payable.currency}. No dispute flag.`,
+    evidenceSource: zwapgridEvidenceLabel(buyerZwapgrid.mode),
     signatureVerified: true,
     supportingClaimIds: [supplierClaim.claimId],
     stateTransition: { from: prevState, to: demo.state },
     details: { payload: claim.payload, claimId: claim.claimId, supplierClaimVerified: isValid },
-    isMocked: true,
+    isMocked: buyerZwapgrid.mode === 'MOCK',
   });
 
   recordAuditEvent({
@@ -397,19 +457,28 @@ function stepObligationVerified(demo: DemoState): DemoState {
   const supplierClaim = demo.claims.find(c => c.claimType === 'INVOICE_RECORDED')!;
   const buyerClaim = demo.claims.find(c => c.claimType === 'PAYABLE_MATCHED')!;
 
+  const supplierPayload = supplierClaim.payload as {
+    invoiceNumber?: string;
+    amount?: number;
+    currency?: string;
+  };
+  const invoiceNumber = supplierPayload.invoiceNumber || demo.config.invoiceNumber || 'INV-2026-1042';
+  const confirmedAmount = supplierPayload.amount ?? demo.config.invoiceAmount ?? 10000;
+  const confirmedCurrency = supplierPayload.currency ?? demo.config.currency ?? 'EUR';
+
   const claim = createSignedClaim(
     'OBLIGATION_CONFIRMED',
     {
       type: 'OBLIGATION_CONFIRMED',
-      invoiceNumber: 'INV-2026-1042',
+      invoiceNumber,
       supplierClaimId: supplierClaim.claimId,
       buyerClaimId: buyerClaim.claimId,
-      confirmedAmount: 10000,
-      confirmedCurrency: 'EUR',
+      confirmedAmount,
+      confirmedCurrency,
     },
     demo.supplierAgent, // Both parties have confirmed
     {
-      subject: 'INV-2026-1042',
+      subject: invoiceNumber,
       sourceSystem: 'INTERNAL',
       correlationId: demo.correlationId,
     }
@@ -424,7 +493,7 @@ function stepObligationVerified(demo: DemoState): DemoState {
     actor: 'SYSTEM',
     actorName: 'Negotiation Engine',
     claimType: 'OBLIGATION_CONFIRMED',
-    summary: 'Obligation mutually verified. Both parties independently confirmed invoice INV-2026-1042 for €10,000 EUR with matching identifiers, amounts, and due dates. No dispute flags.',
+    summary: `Obligation mutually verified. Both parties independently confirmed invoice ${invoiceNumber} for €${confirmedAmount.toLocaleString()} ${confirmedCurrency} with matching identifiers, amounts, and due dates. No dispute flags.`,
     evidenceSource: 'Internal verification',
     signatureVerified: true,
     supportingClaimIds: [supplierClaim.claimId, buyerClaim.claimId],

@@ -161,7 +161,7 @@ export class NegotiationService {
         amount: params.amount,
         currency: params.currency,
         correlationId,
-        autoComplete: params.autoExecute === true && params.requireFinalApproval === false,
+        autoComplete: params.autoExecute === true && params.requireFinalApproval !== true,
       });
     }
 
