@@ -35,6 +35,7 @@ import {
   AlertTriangle,
   Layers,
   FileSpreadsheet,
+  Handshake,
 } from 'lucide-react';
 import { TreasuryIntelligenceService } from '@/lib/services/treasury-intelligence';
 
@@ -319,11 +320,11 @@ export default function SoloDemoView({ onBack }: { onBack?: () => void }) {
               </button>
             )}
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-semibold text-sm">
-                🤝
+              <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white">
+                <Handshake className="w-4 h-4 text-white" />
               </div>
               <div>
-                <span className="font-bold text-slate-900 text-sm tracking-tight">Handslag Protocol</span>
+                <span className="font-bold text-slate-900 text-sm tracking-tight">Handslag Protokoll</span>
                 <span className="ml-2 text-[11px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
                   Solo Simulation
                 </span>

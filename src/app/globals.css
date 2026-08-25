@@ -1,84 +1,44 @@
 @import "tailwindcss";
 
 :root {
-  --bg-main: #f8fafc;
+  --bg-main: #ffffff;
   --bg-card: #ffffff;
-  --border: #e2e8f0;
-  --border-subtle: #f1f5f9;
-  --text-main: #0f172a;
-  --text-muted: #64748b;
-  --text-light: #94a3b8;
-  --accent: #0f172a;
+  --border: #e4e4e7;
+  --border-subtle: #f4f4f5;
+  --text-main: #09090b;
+  --text-muted: #71717a;
+  --text-light: #a1a1aa;
+  --accent: #000000;
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: #ffffff;
+  color: #09090b;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.01em;
 }
 
-/* Crisp minimalist shadows */
-.card-shadow {
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
-}
-
-.card-shadow-hover {
-  transition: all 0.2s ease;
-}
-.card-shadow-hover:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.06), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
-  border-color: #cbd5e1;
-}
-
-/* Subtle step line */
-.step-line {
-  height: 2px;
-  background: #e2e8f0;
-}
-
-.step-line-active {
-  background: #0f172a;
+/* Crisp subtle grid pattern for white background */
+.bg-grid-light {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
 }
 
 /* Clean scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: #ffffff;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
+  background: #e4e4e7;
+  border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #d4d4d8;
 }
-
-/* Animations */
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
-}
-
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.7; }
-}
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-pulse-subtle {
-  animation: pulse-subtle 3s ease-in-out infinite;
-}
-
-.gradient-mesh {
-  background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, transparent 60%),
-              radial-gradient(circle at 85% 30%, rgba(99, 102, 241, 0.06) 0%, transparent 50%),
-              radial-gradient(circle at 15% 40%, rgba(14, 165, 233, 0.06) 0%, transparent 50%);
-}
-

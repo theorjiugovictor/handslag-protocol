@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Handshake } from 'lucide-react';
 import { SessionProvider, useSession } from '@/components/auth/SessionProvider';
 import LandingPage from '@/components/landing/LandingPage';
 import LoginScreen from '@/components/auth/LoginScreen';
@@ -21,12 +22,15 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#fafaf9] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-stone-900 flex items-center justify-center text-white text-2xl animate-pulse shadow-md">
-            🤝
+          <div className="w-10 h-10 rounded-xl bg-black text-white flex items-center justify-center animate-pulse shadow-xs">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M4 12L10 6L14 10L20 4" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M4 20L10 14L14 18L20 12" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
           </div>
-          <p className="text-xs text-stone-500 font-medium tracking-wide">Loading Handslag Protokoll...</p>
+          <p className="text-xs text-zinc-400 font-mono tracking-widest uppercase">Loading Handslag...</p>
         </div>
       </div>
     );
